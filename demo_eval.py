@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from PIL import Image
 
-from models import *
+from models_x import *
 import torchvision_x_functional as TF_x
 import torchvision.transforms.functional as TF
 
@@ -19,11 +19,13 @@ parser.add_argument("--model_dir", type=str, default="pretrained_models", help="
 parser.add_argument("--output_dir", type=str, default="demo_results", help="directory to save results")
 opt = parser.parse_args()
 opt.model_dir = opt.model_dir + '/' + opt.input_color_space
-opt.image_path = opt.image_dir + '/' + opt.input_color_space + '/' + opt.image_name
+# opt.image_path = opt.image_dir + '/' + opt.input_color_space + '/' + opt.image_name
+opt.image_path = opt.image_dir + '/' + opt.image_name
 os.makedirs(opt.output_dir, exist_ok=True)
 
 # use gpu when detect cuda
 cuda = True if torch.cuda.is_available() else False
+device = torch.device('cuda') if cuda else torch.device('cpu')
 # Tensor type
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
@@ -34,7 +36,7 @@ LUT2 = Generator3DLUT_zero()
 #LUT3 = Generator3DLUT_zero()
 #LUT4 = Generator3DLUT_zero()
 classifier = Classifier()
-trilinear_ = TrilinearInterpolation() 
+trilinear_ = TrilinearInterpolation()
 
 if cuda:
     LUT0 = LUT0.cuda()
@@ -46,7 +48,7 @@ if cuda:
     criterion_pixelwise.cuda()
 
 # Load pretrained models
-LUTs = torch.load("%s/LUTs.pth" % opt.model_dir)
+LUTs = torch.load("%s/LUTs.pth" % opt.model_dir, map_location = device)
 LUT0.load_state_dict(LUTs["0"])
 LUT1.load_state_dict(LUTs["1"])
 LUT2.load_state_dict(LUTs["2"])
@@ -57,14 +59,14 @@ LUT1.eval()
 LUT2.eval()
 #LUT3.eval()
 #LUT4.eval()
-classifier.load_state_dict(torch.load("%s/classifier.pth" % opt.model_dir))
+classifier.load_state_dict(torch.load("%s/classifier.pth" % opt.model_dir, map_location = device))
 classifier.eval()
 
 
 def generate_LUT(img):
 
     pred = classifier(img).squeeze()
-    
+
     LUT = pred[0] * LUT0.LUT + pred[1] * LUT1.LUT + pred[2] * LUT2.LUT #+ pred[3] * LUT3.LUT + pred[4] * LUT4.LUT
 
     return LUT
@@ -86,11 +88,11 @@ img = img.unsqueeze(0)
 LUT = generate_LUT(img)
 
 # generate image
-result = trilinear_(LUT, img)
+_ , result = trilinear_(LUT, img)
 
 # save image
 ndarr = result.squeeze().mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 im = Image.fromarray(ndarr)
-im.save('%s/result.jpg' % opt.output_dir, quality=95)
-
-
+output_im_path = f'{opt.output_dir}/{opt.image_name}'
+print(f"using model {opt.model_dir + '/LUTs.pth'} output image to {output_im_path}")
+im.save(output_im_path, quality=95)
