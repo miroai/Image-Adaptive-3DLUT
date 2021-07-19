@@ -82,7 +82,7 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Upsample(size=(256,256),mode='bilinear'),
+            nn.Upsample(size=(256,256),mode='bilinear', align_corners = True),
             nn.Conv2d(3, 16, 3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
             nn.InstanceNorm2d(16, affine=True),
@@ -170,41 +170,41 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
         W = x.size(2)
         H = x.size(3)
         batch = x.size(0)
-        
-        assert 1 == trilinear.forward(lut, 
-                                      x, 
+
+        assert 1 == trilinear.forward(lut,
+                                      x,
                                       output,
-                                      dim, 
-                                      shift, 
-                                      binsize, 
-                                      W, 
-                                      H, 
+                                      dim,
+                                      shift,
+                                      binsize,
+                                      W,
+                                      H,
                                       batch)
 
         int_package = torch.IntTensor([dim, shift, W, H, batch])
         float_package = torch.FloatTensor([binsize])
         variables = [lut, x, int_package, float_package]
-        
+
         ctx.save_for_backward(*variables)
-        
+
         return lut, output
-    
+
     @staticmethod
     def backward(ctx, lut_grad, x_grad):
-        
+
         lut, x, int_package, float_package = ctx.saved_variables
         dim, shift, W, H, batch = int_package
         dim, shift, W, H, batch = int(dim), int(shift), int(W), int(H), int(batch)
         binsize = float(float_package[0])
-            
-        assert 1 == trilinear.backward(x, 
-                                       x_grad, 
+
+        assert 1 == trilinear.backward(x,
+                                       x_grad,
                                        lut_grad,
-                                       dim, 
-                                       shift, 
-                                       binsize, 
-                                       W, 
-                                       H, 
+                                       dim,
+                                       shift,
+                                       binsize,
+                                       W,
+                                       H,
                                        batch)
         return lut_grad, x_grad
 
@@ -239,5 +239,3 @@ class TV_3D(nn.Module):
         mn = torch.mean(self.relu(dif_r)) + torch.mean(self.relu(dif_g)) + torch.mean(self.relu(dif_b))
 
         return tv, mn
-
-
