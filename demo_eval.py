@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from PIL import Image
 
-from models_x import *
+from models import *
 import torchvision_x_functional as TF_x
 import torchvision.transforms.functional as TF
 
@@ -88,7 +88,7 @@ img = img.unsqueeze(0)
 LUT = generate_LUT(img)
 
 # generate image
-_ , result = trilinear_(LUT, img)
+result = trilinear_(LUT, img)
 
 # save image
 ndarr = result.squeeze().mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()

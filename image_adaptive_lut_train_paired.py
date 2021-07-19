@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
 
-from models_x import *
+from models import *
 from datasets import *
 
 import torch.nn as nn
@@ -150,7 +150,7 @@ def generator_eval(img):
 	weights_norm = torch.mean(pred ** 2)
 
 	combine_A = img.new(img.size())
-	_ , combine_A = trilinear_(LUT,img)
+	combine_A = trilinear_(LUT,img)
 
 	return combine_A, weights_norm
 
