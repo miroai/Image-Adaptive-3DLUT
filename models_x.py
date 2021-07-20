@@ -27,7 +27,7 @@ class resnet18_224(nn.Module):
         # self.mean = torch.Tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).cuda()
         # self.std = torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).cuda()
 
-        self.upsample = nn.Upsample(size=(224,224),mode='bilinear', align_corners = True)
+        self.upsample = nn.Upsample(size=(224,224),mode='bilinear') #, align_corners = True)
         net.fc = nn.Linear(512, out_dim)
         self.model = net
 
@@ -62,7 +62,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Upsample(size=(256,256),mode='bilinear', align_corners = True),
+            nn.Upsample(size=(256,256),mode='bilinear'), #, align_corners = True),
             nn.Conv2d(3, 16, 3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
             nn.InstanceNorm2d(16, affine=True),
@@ -82,7 +82,7 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Upsample(size=(256,256),mode='bilinear', align_corners = True),
+            nn.Upsample(size=(256,256),mode='bilinear'), #, align_corners = True),
             nn.Conv2d(3, 16, 3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
             nn.InstanceNorm2d(16, affine=True),
@@ -103,7 +103,7 @@ class Classifier_unpaired(nn.Module):
         super(Classifier_unpaired, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Upsample(size=(256,256),mode='bilinear', align_corners = True),
+            nn.Upsample(size=(256,256),mode='bilinear'), #, align_corners = True),
             nn.Conv2d(3, 16, 3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
             nn.InstanceNorm2d(16, affine=True),
