@@ -115,5 +115,5 @@ _ , result = trilinear_(LUT, img)
 ndarr = result.squeeze().mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 im = Image.fromarray(ndarr)
 output_im_path = f'{opt.output_dir}/{opt.image_name}'
-print(f"using model {opt.model_dir + '/LUTs.pth'} output image to {output_im_path}")
+print(f"using model {lut_fp} output image to {output_im_path}")
 im.save(output_im_path, quality=95)
