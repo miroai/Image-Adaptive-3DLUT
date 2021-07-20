@@ -1,6 +1,6 @@
 import argparse
 import torch
-import os
+import os, re
 import numpy as np
 import cv2
 from PIL import Image
@@ -9,6 +9,25 @@ from models_x import *
 import torchvision_x_functional as TF_x
 import torchvision.transforms.functional as TF
 
+def get_lut_classifier_pth(model_dir):
+    assert os.path.isdir(model_dir), f"{model_dir} is not a real directory"
+    lut_fp = os.path.join(model_dir, "LUTs.pth")
+    classifier_fp = os.path.join(model_dir, "classifier.pth")
+
+    if not os.path.isfile(lut_fp):
+        l_lut = [f for f in os.listdir(model_dir) if "LUT" in f]
+        lut_epochs = [int(re.findall(f'LUTs_(\d+).pth', f)[0]) for f in l_lut]
+        best_lut = 'LUTs_' + str(max(lut_epochs)) + '.pth'
+
+    if not os.path.isfile(classifier_fp):
+        l_cls = [f for f in os.listdir(model_dir) if "classifier" in f]
+        cls_epochs = [int(re.findall(f'classifier_(\d+).pth', f)[0]) for f in l_cls]
+        best_cls = 'classifier_' + str(max(cls_epochs)) + '.pth'
+
+    lut_fp = lut_fp if os.path.isfile(lut_fp) else os.path.join(model_dir, best_lut)
+    classifier_fp = classifier_fp if os.path.isfile(classifier_fp) else os.path.join(model_dir, best_cls)
+
+    return lut_fp, classifier_fp
 
 parser = argparse.ArgumentParser()
 
@@ -18,7 +37,7 @@ parser.add_argument("--input_color_space", type=str, default="sRGB", help="input
 parser.add_argument("--model_dir", type=str, default="pretrained_models", help="directory of pretrained models")
 parser.add_argument("--output_dir", type=str, default="demo_results", help="directory to save results")
 opt = parser.parse_args()
-opt.model_dir = opt.model_dir + '/' + opt.input_color_space
+# opt.model_dir = opt.model_dir + '_' + opt.input_color_space
 # opt.image_path = opt.image_dir + '/' + opt.input_color_space + '/' + opt.image_name
 opt.image_path = opt.image_dir + '/' + opt.image_name
 os.makedirs(opt.output_dir, exist_ok=True)
@@ -48,7 +67,9 @@ if cuda:
     criterion_pixelwise.cuda()
 
 # Load pretrained models
-LUTs = torch.load("%s/LUTs.pth" % opt.model_dir, map_location = device)
+lut_fp , classifier_fp = get_lut_classifier_pth(opt.model_dir)
+print(f'\tPretrain Model used from {opt.model_dir}:\n\t {lut_fp}\n\t {classifier_fp}')
+LUTs = torch.load(lut_fp, map_location = device)
 LUT0.load_state_dict(LUTs["0"])
 LUT1.load_state_dict(LUTs["1"])
 LUT2.load_state_dict(LUTs["2"])
@@ -59,7 +80,7 @@ LUT1.eval()
 LUT2.eval()
 #LUT3.eval()
 #LUT4.eval()
-classifier.load_state_dict(torch.load("%s/classifier.pth" % opt.model_dir, map_location = device))
+classifier.load_state_dict(classifier_fp, map_location = device))
 classifier.eval()
 
 
