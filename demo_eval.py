@@ -80,7 +80,7 @@ LUT1.eval()
 LUT2.eval()
 #LUT3.eval()
 #LUT4.eval()
-classifier.load_state_dict(classifier_fp, map_location = device))
+classifier.load_state_dict(classifier_fp, map_location = device)
 classifier.eval()
 
 
